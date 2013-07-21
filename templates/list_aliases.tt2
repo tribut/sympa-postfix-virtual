@@ -1,0 +1,16 @@
+#------------------------------ [% list.name %]: list alias created [% date %]
+[% IF is_default_domain -%]
+[% list.name %]: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]@[% list.domain %]"
+[% list.name %]-request: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-request@[% list.domain %]"
+[% list.name %]-editor: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-editor@[% list.domain %]"
+#[% list.name %]-subscribe: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-subscribe@[% list.domain %]"
+[% list.name %]-unsubscribe: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-unsubscribe@[% list.domain %]"
+[% list.name %][% return_path_suffix %]: "| /usr/lib/sympa/lib/sympa/bouncequeue [% list.name %]@[% list.domain %]"
+[% ELSE -%]
+[% list.domain %]-[% list.name %]: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]@[% list.domain %]"
+[% list.domain %]-[% list.name %]-request: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-request@[% list.domain %]"
+[% list.domain %]-[% list.name %]-editor: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-editor@[% list.domain %]"
+#[% list.domain %]-[% list.name %]-subscribe: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-subscribe@[% list.domain %]"
+[% list.domain %]-[% list.name %]-unsubscribe: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-unsubscribe@[% list.domain %]"
+[% list.domain %]-[% list.name %][% return_path_suffix %]: "| /usr/lib/sympa/lib/sympa/bouncequeue [% list.name %]@[% list.domain %]"
+[% END -%]
