@@ -6,6 +6,9 @@
 #[% list.name %]-subscribe: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-subscribe@[% list.domain %]"
 [% list.name %]-unsubscribe: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-unsubscribe@[% list.domain %]"
 [% list.name %][% return_path_suffix %]: "| /usr/lib/sympa/lib/sympa/bouncequeue [% list.name %]@[% list.domain %]"
+[% ELSIF is_virtual_domain -%]
+/^([% list.name %])-(request|editor|owner|subscribe|unsubscribe)\@[% list.domainescaped %]$/    $1+[% list.domain %]@sympa$2.
+/^([% list.name %])\@[% list.domainescaped %]$/    $1+[% list.domain %]@sympalist.
 [% ELSE -%]
 [% list.domain %]-[% list.name %]: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]@[% list.domain %]"
 [% list.domain %]-[% list.name %]-request: "| /usr/lib/sympa/lib/sympa/queue [% list.name %]-request@[% list.domain %]"
