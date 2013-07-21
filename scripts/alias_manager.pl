@@ -27,6 +27,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
+# Modified to generate virtual alias files for Postfix virtual alias domains
+# Elwyn Davies 4 April 2008
+
+# Updated to current version of alias_manager.pl
+# Felix Eckhofer 21 July 2013
+
 $ENV{'PATH'} = '';
 
 ## Load Sympa.conf
@@ -48,6 +54,7 @@ my $tmp_alias_file = $Conf{'tmpdir'}.'/sympa_aliases.'.time;
 
 my $default_domain;
 my $alias_wrapper       = Sympa::Constants::SBINDIR . '/aliaswrapper';
+my $postmap             = $Conf{'postmap'};
 my $lock_file           = Sympa::Constants::EXPLDIR . '/alias_manager.lock';
 my $path_to_queue       = Sympa::Constants::LIBEXECDIR . '/queue';
 my $path_to_bouncequeue = Sympa::Constants::LIBEXECDIR .'/bouncequeue';
@@ -63,7 +70,14 @@ if (($operation !~ /^(add|del)$/) || ($#ARGV < 2)) {
 $default_domain = $Conf{'domain'};
 
 my $alias_file;
-$alias_file = $Conf{'sendmail_aliases'} || Sympa::Constants::SENDMAIL_ALIASES;
+my $pt; # pattern type for alias matching
+if ($virtual_domain != 0) {
+    $alias_file = $virtual_aliases_file;
+    $pt = 1;
+} else {
+    $alias_file = $Conf{'sendmail_aliases'} || Sympa::Constants::SENDMAIL_ALIASES;
+    $pt = 0;
+}
 $alias_file = $file if ($file);
 
 unless (-w "$alias_file") {
@@ -76,9 +90,12 @@ $data{'date'} =  &POSIX::strftime("%d %b %Y", localtime(time));
 
 
 $data{'list'}{'domain'} = $data{'robot'} = $domain;
+$data{'list'}{'domainescaped'} = $domain;
+$data{'list'}{'domainescaped'} =~ s/\./\\\./g;
 $data{'list'}{'name'} = $listname;
 $data{'default_domain'} = $default_domain;
 $data{'is_default_domain'} = 1 if ($domain eq $default_domain);
+$data{'is_virtual_domain'} = 1 if ($virtual_domain != 0);
 $data{'return_path_suffix'} = &Conf::get_robot_conf($domain, 'return_path_suffix');
 
 
@@ -105,7 +122,7 @@ if ($operation eq 'add') {
     flock LF, 2;
 
     ## Check existing aliases
-    if (&already_defined(@aliases)) {
+    if (&already_defined($pt, @aliases)) {
 	printf STDERR "some alias already exist\n";
 	exit(13);
     }
@@ -120,11 +137,18 @@ if ($operation eq 'add') {
     }
     close ALIAS;
 
-    ## Newaliases
+    ## Newaliases and postmap unless specifying file on command line
     unless ($file) {
 	unless (system($alias_wrapper) == 0) {
 	    print STDERR "Failed to execute newaliases: $!\n";
 	    exit(6)
+	    }
+	    ## Postmap if doing a virtual domain
+	    if ($virtual_domain != 0) {
+	        unless(system($postmap, $virtual_aliases_file) == 0) {
+	            print STDERR "Failed to execute postmap for $virtual_aliases_file: $!\n";
+	            exit(6);
+	        }
 	    }
     }
 
@@ -151,11 +175,16 @@ if ($operation eq 'add') {
     my @deleted_lines;
     while (my $alias = <ALIAS>) {
 	my $left_side = '';
-	$left_side = $1 if ($alias =~ /^([^:]+):/);
+	if ($pt == 0) {
+		$left_side = $1 if ($alias =~ /^([^:]+):/);
+	} else {
+		$left_side = $1 if ($alias =~ /^([^\t ]+)[ \t]/);
+	}
 
 	my $to_be_deleted = 0;
 	foreach my $new_alias (@aliases) {
-	    next unless ($new_alias =~ /^([^:]+):/);
+		next unless ((($pt == 0) && ($new_alias =~ /^([^:]+):/)) ||
+			(($pt == 1) && ($new_alias =~ /^([^\t ]+)[ \t]/)));
 	    my $new_left_side = $1;
 	    
 	    if ($left_side eq  $new_left_side) {
@@ -191,11 +220,18 @@ if ($operation eq 'add') {
     close NEWALIAS;
     unlink $tmp_alias_file;
 
-    ## Newaliases
+    ## Newaliases and postmap unless specifying file on command line
     unless ($file) {
 	unless (system($alias_wrapper) == 0) {
 	    print STDERR "Failed to execute newaliases: $!\n";
 	exit (6);
+	}
+	## Postmap if doing a virtual domain
+	if ($virtual_domain != 0) {
+	    unless(system($postmap, $virtual_aliases_file) == 0) {
+	        print STDERR "Failed to execute postmap for $virtual_aliases_file: $!\n";
+	        exit(6);
+	    }
 	}
     }
     ## Unlock
@@ -211,22 +247,31 @@ exit 0;
 
 ## Check if an alias is already defined  
 sub already_defined {
-    my @aliases = @_;
+	# pt is 'pattern type' - 0 for oridnary aliases, 1 for virtual regexp aliases
+	my ($pt, @aliases) = @_;
     
     unless (open  ALIAS, "$alias_file") {
 	printf STDERR "Could not read $alias_file\n";
 	exit (7);
     }
 
+	my $left_side = '';
+	my $new_left_side = '';
     while (my $alias = <ALIAS>) {
 	# skip comment
 	next if $alias =~ /^#/ ; 
-	$alias =~ /^([^:]+):/;
-	my $left_side = $1;
+	if ($pt == 0) {
+		$alias =~ /^([^:]+):/;
+		$left_side = $1;
+	} else {
+		$alias =~ /^([^\t ]+)[ \t]/;
+		$left_side = $1;
+	}
 	next unless ($left_side);
 	foreach (@aliases) {
-	    next unless ($_ =~ /^([^:]+):/); 
-	    my $new_left_side = $1;
+		next unless ((($pt == 0) && ($_ =~ /^([^:]+):/)) ||
+			(($pt == 1) && ($_ =~ /^([^\t ]+)[ \t]/)));
+		$new_left_side = $1;
 	    if ($left_side eq  $new_left_side) {
 		print STDERR "Alias already defined : $left_side\n";
 		return 1;
