@@ -53,8 +53,9 @@ my $tmp_alias_file = $Conf{'tmpdir'}.'/sympa_aliases.'.time;
 
 
 my $default_domain;
+my $virtual_domain      = 0;
 my $alias_wrapper       = Sympa::Constants::SBINDIR . '/aliaswrapper';
-my $postmap             = $Conf{'postmap'};
+my $postmap             = '/usr/sbin/postmap'; # debian default
 my $lock_file           = Sympa::Constants::EXPLDIR . '/alias_manager.lock';
 my $path_to_queue       = Sympa::Constants::LIBEXECDIR . '/queue';
 my $path_to_bouncequeue = Sympa::Constants::LIBEXECDIR .'/bouncequeue';
@@ -69,16 +70,15 @@ if (($operation !~ /^(add|del)$/) || ($#ARGV < 2)) {
 
 $default_domain = $Conf{'domain'};
 
-my $alias_file;
+my $alias_file = $Conf{'sendmail_aliases'} || Sympa::Constants::SENDMAIL_ALIASES;
+$alias_file = $file if ($file);
+$virtual_domain = 1 if ($alias_file =~ /virtual$/);
 my $pt; # pattern type for alias matching
 if ($virtual_domain != 0) {
-    $alias_file = $virtual_aliases_file;
     $pt = 1;
 } else {
-    $alias_file = $Conf{'sendmail_aliases'} || Sympa::Constants::SENDMAIL_ALIASES;
     $pt = 0;
 }
-$alias_file = $file if ($file);
 
 unless (-w "$alias_file") {
     print STDERR "Unable to access $alias_file\n";
@@ -145,8 +145,8 @@ if ($operation eq 'add') {
 	    }
 	    ## Postmap if doing a virtual domain
 	    if ($virtual_domain != 0) {
-	        unless(system($postmap, $virtual_aliases_file) == 0) {
-	            print STDERR "Failed to execute postmap for $virtual_aliases_file: $!\n";
+	        unless(system($postmap, $alias_file) == 0) {
+	            print STDERR "Failed to execute postmap for $alias_file: $!\n";
 	            exit(6);
 	        }
 	    }
@@ -228,8 +228,8 @@ if ($operation eq 'add') {
 	}
 	## Postmap if doing a virtual domain
 	if ($virtual_domain != 0) {
-	    unless(system($postmap, $virtual_aliases_file) == 0) {
-	        print STDERR "Failed to execute postmap for $virtual_aliases_file: $!\n";
+	    unless(system($postmap, $alias_file) == 0) {
+	        print STDERR "Failed to execute postmap for $alias_file: $!\n";
 	        exit(6);
 	    }
 	}
