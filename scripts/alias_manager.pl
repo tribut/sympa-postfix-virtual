@@ -179,15 +179,21 @@ if ($operation eq 'add') {
 	if ($pt == 0) {
 		$left_side = $1 if ($alias =~ /^([^:]+):/);
 	} else {
-		$left_side = $1 if ($alias =~ /^([^\t ]+)[ \t]/);
+		$left_side = $1 if ($alias =~ /^([^\t ]+)[\t ]/);
+		$left_side = $1 if ($alias =~ /^(#[^:]+):/);
 	}
 
 	my $to_be_deleted = 0;
 	foreach my $new_alias (@aliases) {
-		next unless ((($pt == 0) && ($new_alias =~ /^([^:]+):/)) ||
-			(($pt == 1) && ($new_alias =~ /^([^\t ]+)[ \t]/)));
-	    my $new_left_side = $1;
-	    
+        my $new_left_side = '';
+        if ($pt == 0) {
+            $new_left_side = $1 if ($new_alias =~ /^([^:]+):/);
+        } else {
+            $new_left_side = $1 if ($new_alias =~ /^([^\t ]+)[\t ]/);
+            $new_left_side = $1 if ($new_alias =~ /^(#[^:]+):/);
+        }
+        next unless $new_left_side;
+
 	    if ($left_side eq  $new_left_side) {
 		push @deleted_lines, $alias;
 		$to_be_deleted = 1 ;
