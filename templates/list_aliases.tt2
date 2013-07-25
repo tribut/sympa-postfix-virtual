@@ -1,4 +1,4 @@
-#------------------------------ [% list.name %]: list alias created [% date %]
+#------------------------------ [% list.name %]@[% list.domain %]: list alias created [% date %]
 [% IF is_virtual_domain -%]
 /^([% list.name %])-(request|editor|owner|subscribe|unsubscribe)\@[% list.domainescaped %]$/    $1+[% list.domain %]@sympa$2.
 /^([% list.name %])\@[% list.domainescaped %]$/    $1+[% list.domain %]@sympalist.
