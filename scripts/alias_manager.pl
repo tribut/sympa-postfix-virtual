@@ -139,17 +139,18 @@ if ($operation eq 'add') {
 
     ## Newaliases and postmap unless specifying file on command line
     unless ($file) {
-	unless (system($alias_wrapper) == 0) {
-	    print STDERR "Failed to execute newaliases: $!\n";
-	    exit(6)
-	    }
-	    ## Postmap if doing a virtual domain
-	    if ($virtual_domain != 0) {
-	        unless(system($postmap, $alias_file) == 0) {
-	            print STDERR "Failed to execute postmap for $alias_file: $!\n";
-	            exit(6);
-	        }
-	    }
+        ## Postmap if doing a virtual domain
+        if ($virtual_domain != 0) {
+            unless(system($postmap, $alias_file) == 0) {
+                print STDERR "Failed to execute postmap for $alias_file: $!\n";
+                exit(6);
+            }
+        } else {
+            unless (system($alias_wrapper) == 0) {
+                print STDERR "Failed to execute newaliases: $!\n";
+                exit(6);
+            }
+        }
     }
 
     ## Unlock
@@ -222,17 +223,18 @@ if ($operation eq 'add') {
 
     ## Newaliases and postmap unless specifying file on command line
     unless ($file) {
-	unless (system($alias_wrapper) == 0) {
-	    print STDERR "Failed to execute newaliases: $!\n";
-	exit (6);
-	}
-	## Postmap if doing a virtual domain
-	if ($virtual_domain != 0) {
-	    unless(system($postmap, $alias_file) == 0) {
-	        print STDERR "Failed to execute postmap for $alias_file: $!\n";
-	        exit(6);
-	    }
-	}
+        ## Postmap if doing a virtual domain
+        if ($virtual_domain != 0) {
+            unless(system($postmap, $alias_file) == 0) {
+                print STDERR "Failed to execute postmap for $alias_file: $!\n";
+                exit(6);
+            }
+        } else {
+            unless (system($alias_wrapper) == 0) {
+                print STDERR "Failed to execute newaliases: $!\n";
+                exit(6);
+            }
+        }
     }
     ## Unlock
     flock LF, 8;
