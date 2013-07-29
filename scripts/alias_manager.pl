@@ -55,7 +55,6 @@ my $tmp_alias_file = $Conf{'tmpdir'}.'/sympa_aliases.'.time;
 my $default_domain;
 my $virtual_domain      = 0;
 my $alias_wrapper       = Sympa::Constants::SBINDIR . '/aliaswrapper';
-my $postmap             = '/usr/sbin/postmap'; # debian default
 my $lock_file           = Sympa::Constants::EXPLDIR . '/alias_manager.lock';
 my $path_to_queue       = Sympa::Constants::LIBEXECDIR . '/queue';
 my $path_to_bouncequeue = Sympa::Constants::LIBEXECDIR .'/bouncequeue';
@@ -137,20 +136,12 @@ if ($operation eq 'add') {
     }
     close ALIAS;
 
-    ## Newaliases and postmap unless specifying file on command line
-    unless ($file) {
-        ## Postmap if doing a virtual domain
-        if ($virtual_domain != 0) {
-            unless(system($postmap, $alias_file) == 0) {
-                print STDERR "Failed to execute postmap for $alias_file: $!\n";
-                exit(6);
-            }
-        } else {
-            unless (system($alias_wrapper) == 0) {
-                print STDERR "Failed to execute newaliases: $!\n";
-                exit(6);
-            }
-        }
+    ## Newaliases
+    unless ($file || $virtual_domain != 0) {
+	unless (system($alias_wrapper) == 0) {
+	    print STDERR "Failed to execute newaliases: $!\n";
+	    exit(6)
+	    }
     }
 
     ## Unlock
@@ -227,20 +218,12 @@ if ($operation eq 'add') {
     close NEWALIAS;
     unlink $tmp_alias_file;
 
-    ## Newaliases and postmap unless specifying file on command line
-    unless ($file) {
-        ## Postmap if doing a virtual domain
-        if ($virtual_domain != 0) {
-            unless(system($postmap, $alias_file) == 0) {
-                print STDERR "Failed to execute postmap for $alias_file: $!\n";
-                exit(6);
-            }
-        } else {
-            unless (system($alias_wrapper) == 0) {
-                print STDERR "Failed to execute newaliases: $!\n";
-                exit(6);
-            }
-        }
+    ## Newaliases
+    unless ($file || $virtual_domain != 0) {
+	unless (system($alias_wrapper) == 0) {
+	    print STDERR "Failed to execute newaliases: $!\n";
+	exit (6);
+	}
     }
     ## Unlock
     flock LF, 8;
