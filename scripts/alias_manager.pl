@@ -26,12 +26,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 # Modified to generate virtual alias files for Postfix virtual alias domains
 # Elwyn Davies 4 April 2008
+#
 # Updated to current version of alias_manager.pl
 # Felix Eckhofer 21 July 2013
+#
+# Updated to 6.2.x 
+# Peter Putzer 23 January 2016
+#
 
-use lib split(/:/, $ENV{SYMPALIB} || ''), '--modulesdir--';
+use lib split(/:/, $ENV{SYMPALIB} || ''), '/usr/local/libexec/sympa';
 use strict;
 use warnings;
 use English qw(-no_match_vars);
@@ -119,7 +125,7 @@ my $data = {
     'robot'             => $domain,
     'default_domain'    => $default_domain,
     'is_default_domain' => ($domain eq $default_domain),
-    'is_virtual_domain' => (1 if ($virtual_domain != 0));
+    'is_virtual_domain' => ($virtual_domain != 0),
     'return_path_suffix' =>
         Conf::get_robot_conf($domain, 'return_path_suffix'),
 };
