@@ -30,8 +30,11 @@
 # Modified to generate virtual alias files for Postfix virtual alias domains
 # Elwyn Davies 4 April 2008
 
-# Updated to current version of alias_manager.pl
+# Updated to alias_manager.pl from Sympa 6.12
 # Felix Eckhofer 21 July 2013
+
+# Updated to Sympa 6.2.16
+# Peter Putzer 23 January 2016 and 11 March 2017
 
 use lib split(/:/, $ENV{SYMPALIB} || ''), '/usr/share/sympa/lib';
 use strict;
